@@ -1,0 +1,10 @@
+{
+  "name": "nodejs-express-ws-simple",
+  "version": "0.0.1",
+  "description": "Simple Node.js Express application with websockets",
+  "license": "Apache-2.0",
+  "main": "app.js",
+  "dependencies": {
+    "dockerode": "^3.0.2"
+  }
+}

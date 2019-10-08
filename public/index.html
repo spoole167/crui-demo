@@ -1,0 +1,60 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="css/bootstrap.min.css" >
+    <title>Checkpoint & Restore for Containers</title>
+  </head>
+  <body>
+    <div class="container">
+    <h1>Checkpoint & Restore for Containers</h1>
+    <div class="row">
+
+      <div class="col-11">
+        <iframe id="port-8080" src="http://localhost:3000/get_ready.html" width="400" height="400"></iframe>
+        <iframe id="port-9080" src="http://localhost:3000/get_ready.html" width="400" height="400"></iframe>
+      </div>
+
+      <div class="col-1">
+        <div class="btn-group-vertical btn-group-lg" role="group">
+        <button type="button" id="ready_button" class="btn btn-danger btn-lg" disabled>Ready</button>
+        <button type="button" id="set_button" class="btn btn-warning btn-lg" disabled>Set</button>
+        <button type="button" id="go_button" class="btn btn-success btn-lg" disabled>Go</button>
+        </div>
+      </div>
+     </div>
+    </div>
+  </div>
+  !-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">
+  Launch demo modal
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="setupmodal" data-keyboard=false tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalCenterTitle">Loading..</h5>
+      </div>
+      <div class="modal-body">
+        Please wait while the launcher is loaded and a connection is made
+      </div>
+      <div class="modal-footer">
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/docker.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
