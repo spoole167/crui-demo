@@ -5,6 +5,8 @@
   "license": "Apache-2.0",
   "main": "app.js",
   "dependencies": {
-    "dockerode": "^3.0.2"
+    "delay": "^4.3.0",
+    "dockerode": "^3.0.2",
+    "request": "^2.88.0"
   }
 }

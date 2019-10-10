@@ -18,18 +18,40 @@
 // set button to Launched
 //
 
+
+checkState=function(port) {
+
+  var v=$("#hidden-"+port)
+  if (v.length) {
+      if(v.attr("src")==null) {
+        console.log("assigned for "+port)
+        v.attr("src","http://localhost:"+port+"/resources/images/pets.png")
+        $("#port-"+port).attr("src","http://localhost:"+port)
+      } else {
+
+        $("#port-"+port).attr("src","http://localhost:"+port)
+      }
+  }
+  else {
+    console.log("no element for "+port)
+  }
+
+
+}
+
 var client_state = {
   action: "",
   state:"init",
   ports: []
 }
 
+
 poller=function() {
+
     var ports=client_state.ports
     if(ports!=null ) {
       for(var i=0;i<ports.length;i++) {
-        var id="#port-"+ports[i]
-        $( id ).attr("src","http://localhost:"+ports[i]);
+        checkState(ports[i])
       }
     }
 }
@@ -37,31 +59,25 @@ poller=function() {
 // setup
 // reset button states
 
-sendServer=function() {
-    console.log(client_state)
-    console.log(JSON.stringify(client_state))
-    websocket.send(JSON.stringify(client_state));
-}
 
 
-// connected to server
-// enable the web page
+updateUI2=function() {
+  console.log("update ui")
+  console.log(config)
+  $( "#scores" ).empty()
+  for(var i=0;i<config.length;i++) {
+    var q=config[i]
+    var fid="port-"+q.expose
+    var entry=$("<iframe>", {id: fid, class: "w-100 embed-responsive-item", src:'http://localhost:3000/get_ready.html' });
+    $( "#scores").append(entry)
+    var img=document.createElement('img')
+    img.id="hidden-"+q.expose
+    img.onload = function(){  console.log("loaded "+img.id ); };
+    img.onerror = function(err ){
+        console.log("failed "+img.id)
+        console.log(err)
+    };
+    $( "#hidden").append(img)
+  }
 
-serverConnected=function() {
-
-}
-
-handleGoButtonInput=function() {
-  client_state.action="go"
-  sendServer()
-}
-
-handleReadyButtonInput=function() {
-  client_state.action="ready"
-  sendServer()
-}
-
-handleSetButtonInput=function() {
-  client_state.action="set"
-  sendServer()
 }

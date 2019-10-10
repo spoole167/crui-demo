@@ -9,51 +9,61 @@
     <title>Checkpoint & Restore for Containers</title>
   </head>
   <body>
-    <div class="container">
+    <div class="container-fluid">
     <h1>Checkpoint & Restore for Containers</h1>
     <div class="row">
+      <div class="col-10">
 
-      <div class="col-11">
-        <iframe id="port-8080" src="http://localhost:3000/get_ready.html" width="400" height="400"></iframe>
-        <iframe id="port-9080" src="http://localhost:3000/get_ready.html" width="400" height="400"></iframe>
-      </div>
+        <div id="scores"  style="background-color: #eee;" class="card-deck">
 
-      <div class="col-1">
+       </div>
+          <div>Timer</div>
+         <div id='timer'></div>
+     </div>
+
+      <div class="col-2">
+        <div class="card">
+            <div class="card-body jumbotron">
         <div class="btn-group-vertical btn-group-lg" role="group">
-        <button type="button" id="ready_button" class="btn btn-danger btn-lg" disabled>Ready</button>
-        <button type="button" id="set_button" class="btn btn-warning btn-lg" disabled>Set</button>
-        <button type="button" id="go_button" class="btn btn-success btn-lg" disabled>Go</button>
+          <button type="button" id="ready_button" class="btn btn-danger btn-lg" disabled>Ready</button>
+          <button type="button" id="set_button" class="btn btn-warning btn-lg" disabled>Set</button>
+          <button type="button" id="go_button" class="btn btn-success btn-lg" disabled>Go</button>
+        </div>
+      </div>
+      </div>
+        <div class="card" >
+            <img src="img/instructions.png" class="card-img-top" alt="...">
+            <div class="card-body">
+              <h5 class="card-title">Instructions</h5>
+              <p class="card-text">Press the "ready" button to clean up running containers. Press the "set" button to create containers. The press "go" to start them</p>
+            </div>
+        </div>
+        <div class="card" >
+            <img src="..." class="card-img-top" alt="...">
+            <div class="card-body">
+              <h5 class="card-title">Activities</h5>
+              <p class="card-text">Stuff happens here...</p>
+            </div>
         </div>
       </div>
      </div>
     </div>
+
   </div>
-  !-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">
-  Launch demo modal
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="setupmodal" data-keyboard=false tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalCenterTitle">Loading..</h5>
+  <div id="container-template" hidden>
+    <div class="card p-3">
+      <h5 class="card-header display-4">&nbsp;</h5>
+      <div class="card-body embed-responsive embed-responsive-1by1">
+        <iframe class="embed-responsive-item" src:'http://localhost:3000/get_ready.html'></iframe>
       </div>
-      <div class="modal-body">
-        Please wait while the launcher is loaded and a connection is made
-      </div>
-      <div class="modal-footer">
-
-      </div>
+      <div class="timer-display card-footer display-3">&nbsp;</div>
     </div>
+
   </div>
-</div>
-
-
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="js/popper.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/comms.js"></script>
     <script src="js/docker.js"></script>
     <script src="js/main.js"></script>
 </body>
