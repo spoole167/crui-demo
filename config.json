@@ -1,0 +1,55 @@
+{
+  "title": "Checkpoint & Restore for Containers 2" ,
+  "instances": [
+    {
+      "image": "bharathappali/petclinic-springboot:without-criu",
+      "title": "Petclinic with OpenJ9 (no CRIU)",
+      "name": "petclinic-withoutcriu",
+      "expose1": 8080,
+      "hostconfig": {
+        "PortBindings2": {
+          "8080/tcp": [
+            {
+              "HostPort": "8080"
+            }
+          ]
+        }
+      }
+    },
+
+      {
+        "image": "noncriu_hotspot:latest",
+        "title": "Petclinic with Hotspot (no CRIU)",
+        "name": "petclinic-withcriu_hs",
+        "hostconfig": {
+        }
+      },
+    {
+      "image": "bharathappali/petclinic-springboot:with-criu",
+      "title": "Petclinic with OpenJ9 (CRIU enabled)",
+      "name": "petclinic-withcriu",
+      "expose1": 9080,
+      "hostconfig": {
+        "PortBindings2": {
+          "8080/tcp": [
+            {
+              "HostPort": "9080"
+            }
+          ]
+        },
+        "SecurityOpt": [
+          "apparmor=unconfined",
+          "seccomp=unconfined"
+        ],
+        "CapAdd": [
+          "AUDIT_CONTROL",
+          "DAC_READ_SEARCH",
+          "NET_ADMIN",
+          "SYS_ADMIN",
+          "SYS_PTRACE",
+          "SYS_RESOURCE"
+        ]
+      }
+    }
+  ]
+}

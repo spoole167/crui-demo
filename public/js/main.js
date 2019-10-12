@@ -1,3 +1,4 @@
+"use strict";
 // set page ready
 // set button to "Get Set"
 // press button
@@ -19,7 +20,24 @@
 //
 
 var timerValue=""
-var timerEvent
+var timerEvent=null
+var config=[]
+var title
+
+var eventHandlers = {
+
+    "open"         :  serverIsOpen ,
+    "ready"        :  serverIsReady,
+    "set"          :  serverIsSet,
+    "go"           :  serverIsGo,
+    "error"        :  serverIsError,
+    "fatal"        :  serverIsDead,
+    "box-starting" :  containerStarting,
+    "box-created"  :  containerCreated,
+    "box-started"  :  containerStarted,
+    "info"         :  serverInfo
+
+}
 
 function handleMessage(evt,msg) {
 
@@ -27,22 +45,22 @@ function handleMessage(evt,msg) {
     console.log("empty comms message ")
     return
   }
-  var type=msg.type
+  console.log("msg")
+  console.log(msg)
 
-  switch(type) {
-    case "open"  :  serverIsOpen(msg);  break;
-    case "ready" :  serverIsReady(msg); break;
-    case "set"   :  serverIsSet(msg); break;
-    case "go"    :  serverIsGo(msg); break;
-    case "error" :  serverIsError(msg); break;
-    case "box"   :  containerUpdated(msg); break;
-    case "info"  :  serverInfo(msg); break;
-    default:  console.log("comms msg type "+type+" not recognised"); break;
+  var type=msg.type
+  var handler=eventHandlers[type]
+  if(handler!=null) {
+    console.log(type)
+    handler(msg);
+  } else {
+     console.log("comms msg type "+type+" not recognised");
   }
 
 }
 
-var config=[]
+
+
 
 $( document ).ready(function() {
 
@@ -82,9 +100,15 @@ function serverInfo(msg) {
   console.log(msg.data.msg)
 }
 
+function serverIsDead(msg) {
+  console.log(msg.data.msg)
+  alert(msg.data.msg)
+}
+
 function serverIsOpen(msg) {
 
-  config=msg.data
+  config=msg.data.instances
+  title=msg.data.title
 
   cleanUI()
 
@@ -96,10 +120,14 @@ function setTimers(value) {
 }
 
 function cleanUI() {
+
+  $("#title").text(title)
+  $("title").text(title)
+
   $( "#scores" ).empty()
   for(var i=0;i<config.length;i++) {
     var q=config[i]
-    var fid="port-"+q.expose
+    var fid="port-"+i
 
     var template=$("#container-template .card").clone()
     template.attr("id","container-"+i);
@@ -149,33 +177,35 @@ function enableDemo() {
   $( "#ready_button" ).attr("disabled", false);
 }
 
-function containerUpdated(msg) {
+function containerCreated(msg) {
+  var box=msg.target
+  console.log("container created "+box)
+  $("#timer-"+box).text("-.-"); // clear the onscreen timer
+}
 
-  var state=msg.data.state
-  var box=msg.data.box
+function containerStarted(msg) {
+ // stop the timer and show the page
+ var box=msg.target
+ var port=msg.data
+
+ console.log("container started "+box)
+ var fig=config[box]
+ var text=config[box].timerElement.text()
+ clearInterval(config[box].timer)
+ config[box].timerElement.text(text)
+ $("#port-"+box).attr("src","http://localhost:"+port);
+
+}
+
+function containerStarting(msg) {
+
+  var box=msg.target
   var fig=config[box]
+  var started=Date.now()
 
-  console.log("box "+box+" state ="+state);
-
-  switch(state) {
-  case  "created"  :  $("#timer-"+box).text("-.-"); break; // clear the onscreen timer
-  case  "starting" :  // time is now
-                      var started=Date.now()
-                      config[box].timerElement=$("#timer-"+box)
-                      config[box].timerElement.text("0.0")
-
-                      config[box].timer=initTimer(config[box].timerElement,started)
-                      break; // start the timer
-  case  "started"  :  // stop the timer and show the page
-                    var text=config[box].timerElement.text()
-                    clearInterval(config[box].timer)
-                    config[box].timerElement.text(text)
-                  $("#port-"+fig.expose).attr("src","http://localhost:"+fig.expose);
-                   break;
-  }
-
-
-
+  config[box].timerElement=$("#timer-"+box)
+  config[box].timerElement.text("0.0")
+  config[box].timer=initTimer(config[box].timerElement,started)
 
 }
 
@@ -183,10 +213,11 @@ function containerUpdated(msg) {
 
 function sendServerMsg(type,data) {
   var msg= {
-      type: type ,
+      cmd: type ,
       data: data
   }
-
-  websocket.send(JSON.stringify(msg));
+  var payload=JSON.stringify(msg)
+  console.log("send "+payload)
+  websocket.send(payload);
 
 }

@@ -1,268 +1,141 @@
 const express = require('express')
 const app = express()
-const Docker = require('dockerode');
-const docker = new Docker({socketPath: '/var/run/docker.sock'});
 const request = require('request');
-const delay = require('delay');
+const comms = require("./comms.js");
 
-const containerDefs=[
-  {
+const dockerm = require("./docker_management.js");
 
-      image: 'bharathappali/petclinic-springboot:without-criu' ,
-      title: "Petclinic with OpenJ9 (no CRIU)",
-      name: 'petclinic-withoutcriu',
-      expose: 8080,
-      hostconfig : {
-          PortBindings: { "8080/tcp": [{ "HostPort": "8080"} ] },
-      } ,
-      container: null
-  },
-  {
+const config_data = require('./config.json')
+const instances=config_data.instances
 
-      image: 'bharathappali/petclinic-springboot:with-criu' ,
-      title: "Petclinic with OpenJ9 (CRIU enabled)",
-      name: 'petclinic-withcriu',
-      expose: 9080,
-      hostconfig : {
-        PortBindings: { "8080/tcp": [{ "HostPort": "9080"} ] },
-        SecurityOpt: ["apparmor=unconfined","seccomp=unconfined"] ,
-        CapAdd : ["AUDIT_CONTROL",
-                     "DAC_READ_SEARCH",
-                     "NET_ADMIN",
-                     "SYS_ADMIN",
-                     "SYS_PTRACE",
-                     "SYS_RESOURCE"]
-      },
-      container: null
-  } ,
-  {
 
-      image: 'bharathappali/petclinic-springboot:with-criu' ,
-      title: "Petclinic with OpenJ9 (CRIU enabled)",
-      name: 'petclinic-withcriu2',
-      expose: 9081,
-      hostconfig : {
-        PortBindings: { "8080/tcp": [{ "HostPort": "9081"} ] },
-        SecurityOpt: ["apparmor=unconfined","seccomp=unconfined"] ,
-        CapAdd : ["AUDIT_CONTROL",
-                     "DAC_READ_SEARCH",
-                     "NET_ADMIN",
-                     "SYS_ADMIN",
-                     "SYS_PTRACE",
-                     "SYS_RESOURCE"]
-      },
-      container: null
-  }
-
-]
+var msg
 
 var message = {
     type : "",
     msg: ""
 }
 
-var state
-
-app.get('/hello', (req, res) => {
-  res.send("Hello from Appsody!");
-});
-
-
-function sendClientMsg(ws,type,data) {
-
-  var msg ={ data:data , type:type }
-
-  ws.send(JSON.stringify(msg))
-}
-
-function getClientMsg(message) {
-
-  var cmd=String(message)
-  if( cmd.startsWith("{") == false) {
-      console.log("spurious data %s",cmd)
-      return
-  }
-  var msg=JSON.parse(cmd)
-
-  return msg
-
-}
 
 config=function(wss) {
 
-wss.on('connection', ws => {
+      // setup comms structure to clients
+      // config the state engine
+      // tie together
+      var msg=comms({wss:wss,debug:true})
 
+      var docker=dockerm(msg,config_data)
 
+      msg.Init(
+        {
+          connected:  function() {
+            msg.Open(config_data)
+            checkConfig(msg,docker)
 
-    sendClientMsg(ws,"open",containerDefs)
+          } ,
+          command: function(cmd) {
 
-  ws.on('message', message => {
+            switch (cmd.cmd) {
+              case "ready"  : docker.clearContainers(); break;
+              case "set"    : docker.createContainers(instances); break;
+              case "go"     : docker.startContainers(monitorContainer); break;
+            }
 
-    var msg=getClientMsg(message)
-
-    switch (msg.type) {
-      // get ready
-      case "ready"  : getReady(ws); break;
-      case "set"    : getSet(ws); break;
-      case "go"     : launch(ws); break;
-    }
-  })
-
-})
-
+          }
+        }
+      );
 }
 
-function removeContainer(ws,list) {
-
-  if (list.length==0) {
-    sendClientMsg(ws,"info",{ msg: "clearing 0 containers"})
-    sendClientMsg(ws,"ready",{})
-    return
+function checkConfig(msg,docker) {
+  // check the images can be found...
+  if(instances==null || instances.length<1) {
+    msg.Fatal("no configuration elements")
+  } else {
+    checkConfigInstances(msg,docker)
   }
-    sendClientMsg(ws,"info",{ msg: "clearing "+list.length+" containers"})
+}
 
-  var containerInfo=list.pop()
-  var n=containerInfo.Names[0]
-  console.log('remove petclinic container %s',n)
+function configImage(msg,image,instance) {
 
-  docker.getContainer(containerInfo.Id).kill(function (err, data) {
-      docker.getContainer(containerInfo.Id).remove(function (err,data) {
+  image.inspect( function(err,data) {
 
-          removeContainer(ws,list)
-      })
+    instance.docker_image=image
+    var exPorts=data.Config.ExposedPorts
+    if(exPorts.length==0) {
+      msg.Fatal("image "+instance.image+" has no ports")
+      return
+    }
+
+    var keys=Object.keys(exPorts)
+    var ports=[]
+
+    for(var k=0;k<keys.length;k++) {
+        var parts=keys[k].split("/");
+
+        if(parts[1]=="tcp") { ports.push(parts[0]) }
+    }
+
+    if (ports.length==0) {
+        msg.Fatal("image "+instance.image+" has no exposed tcp ports")
+        return
+    }
+    if (ports.length>1) {
+        msg.Fatal("image "+instance.image+" has more than one tcp port")
+        return
+    }
+
+    instance.internalPort=ports[0]
+    msg.Info(instance.image+" has port "+instance.internalPort)
+
+
   });
 }
-function getReady(ws) {
 
-  console.log("get ready")
-  docker.listContainers({all: true},function (err, containers) {
+function checkConfigInstances(msg,docker) {
 
-      // build list ...
-      var candidates=[]
 
-      containers.forEach(function (containerInfo) {
-        console.log(containerInfo.Names[0])
-        var n=containerInfo.Names[0]
-        if (n.includes("petclinic")) {
-            candidates.push(containerInfo)
-          //  docker.getContainer(containerInfo.Id).remove();
+    for(var i=0;i<instances.length;i++) {
+
+        var instance=instances[i]
+        instance.id=i
+
+        if (instance.image==null ) {
+            msg.Error("missing image name for config "+i)
+            return
         }
 
-      });
-      removeContainer(ws,candidates)
+        var image=docker.getImage(instance.image)
+
+
+        if(image==null) {
+          msg.Error("cannot find image "+instance.image)
+          return
+        }
+
+        configImage(msg,image,instance);
 
 
 
-
-   });
-
-
-}
-
-function launch(ws) {
-    console.log("launch...")
-    sendClientMsg(ws,"info",{ msg: "launch begins"})
-    var l=state.active.length
-
-    for( var i=0;i<l;i++) {
-      console.log(state.active[i].id)
-
-      state.active[i].start();
-      sendClientMsg(ws,"box",{box:i, state:"starting"})
-      
-    }
-
-    sendClientMsg(ws,"info",{ msg: "launch completed"})
-    sendClientMsg(ws,"go",{})
-
-    var l=state.active.length
-    for( var i=0;i<l;i++) {
-      waitForContainer(i,ws)
-    }
+      } // end for
 
 }
 
-function waitForContainer(i,ws) {
 
-  state.active[i].inspect().then(function(f){
-    var ip=f.NetworkSettings.IPAddress
-    if(ip==null || ip=="") {
-      setTimeout(waitForContainer,10,i,ws)
-    } else {
-      setTimeout(monitorContainer,50,i,ip,ws)
-    }
-  });
-}
-
-function monitorContainer(i,ip,ws) {
-    //console.log("watch ",i,ip)
-  request('http://'+ip+':8080', function (error, response, body) {
+function monitorContainer(i,ip,iport,eport,msg) {
+  //console.log("watch ",i,ip,port)
+  request('http://'+ip+':'+iport, function (error, response, body) {
     if(error==null) {
-      sendClientMsg(ws,"box",{box:i , state:"started" })
+        msg.State("box-started",i,eport)
     }
     else {
+        console.log(error)
     //  console.log(error)
-      setTimeout(monitorContainer,50,i,ip,ws)
+      setTimeout(monitorContainer,50,i,ip,iport,eport,msg)
     }
   });
 }
 
-function getSet(ws) {
-
-  state = {active: [], ports:[] }
-  createContainer(ws,0)
 
 
-}
-
-
-
-function createContainer(ws,c) {
-
-  if ( c >= containerDefs.length) {
-
-        sendClientMsg(ws,"set",{})
-        return
-  }
-  console.log("creating container "+c)
-
-  var image=containerDefs[c].image
-  var name =containerDefs[c].name
-  var expose=containerDefs[c].expose
-  var hconf=containerDefs[c].hostconfig
-
-  state.ports.push(expose)
-
-  console.log(name)
-
-  var exposedPort=""+expose+"/tcp"
-
-  //   PortBindings: {"80/tcp": [{ "HostPort": "80" }],"22/tcp": [{ "HostPort": "22" }] }
-  var exPorts={}
-  exPorts[exposedPort]={}
-
-  var definition={Image: image,
-                          name: name,
-                          ExposedPorts: exPorts,
-                          HostConfig: hconf,
-                        }
-
-  console.log(JSON.stringify(definition))
-
-  // create the container speced'
-  docker.createContainer(definition, function (err, container) {
-
-    if(err!=null) {
-        sendClientMsg(ws,"error",{})
-    } else {
-      sendClientMsg(ws,"box",{ box: c, state:"created" })
-      state.active.push(container)
-      containerDefs[c].container=container
-      c++
-      createContainer(ws,c)
-    }
-  })
-
-}
 module.exports.app = app;
 module.exports.ws  = config;
