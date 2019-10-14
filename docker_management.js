@@ -2,6 +2,7 @@ const Docker = require('dockerode');
 
 const docker = new Docker({socketPath: '/var/run/docker.sock'});
 
+
 var config
 
 
@@ -72,7 +73,7 @@ function createContainers(msg,instances,active_list,ref) {
   var definition={Image: image,
                         //  ExposedPorts: exPorts,
                           HostConfig: hconf,
-                          Labels: { "dev.noregressions.dockermon" : ""}
+                          Labels: { "dev.noregressions.dockermon" : ""+ref}
                   }
 
 
@@ -86,7 +87,7 @@ function createContainers(msg,instances,active_list,ref) {
         msg.Error("error "+err)
     } else {
       active_list.push(container)
-      msg.State("box-created",instance.id)
+      msg.State("box-created",instance.id,container.id)
         ref++
        createContainers(msg,instances,active_list,ref)
     }
@@ -97,6 +98,8 @@ function createContainers(msg,instances,active_list,ref) {
 function waitForContainer(i,msg,cb) {
 
 config.active[i].inspect().then(function(f){
+
+    console.log("wait for "+i)
     var ip=f.NetworkSettings.IPAddress
     if(ip==null || ip=="") {
       setTimeout(waitForContainer,10,i,msg,cb)
@@ -124,13 +127,29 @@ config.active[i].inspect().then(function(f){
 }
 
 
-
 module.exports =  function(msg,cfg) {
 
     config=cfg
     config.active=[]
 
+    docker.getEvents({filter:"label=dev.noregressions.dockermon"}).then( e => {
+      e.on('readable', () => {
+          var q=new String(e.read())
+          var oq=JSON.parse(q)
+          if(oq.Type=="container") {
+            var box_id=oq.Actor.Attributes["dev.noregressions.dockermon"]
+            switch(oq.status) {
+              case "die": msg.State("box-died",box_id); break;
+              case "create" : msg.State("box-create",box_id); break;
+              default : msg.Info("state = "+oq.status+" target="+box_id); break;
+            }
+          }
+    })
+     })
+    .catch(() => {console.error('Failed to attach docker event listener.'); })
+
     return  {
+
         getImage: function(name) {
           return docker.getImage(name)
         },

@@ -128,9 +128,9 @@ function monitorContainer(i,ip,iport,eport,msg) {
         msg.State("box-started",i,eport)
     }
     else {
-        console.log(error)
+      //  console.log(error)
     //  console.log(error)
-      setTimeout(monitorContainer,50,i,ip,iport,eport,msg)
+      setTimeout(monitorContainer,100,i,ip,iport,eport,msg)
     }
   });
 }

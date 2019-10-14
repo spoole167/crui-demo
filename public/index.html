@@ -14,10 +14,10 @@
     <div class="row">
       <div class="col-10">
 
-        <div id="scores"  style="background-color: #eee;" class="card-deck">
+          <div id="scores"  style="background-color: #eee;" class="row">
 
        </div>
-        
+
      </div>
 
       <div class="col-2">
@@ -40,8 +40,10 @@
         <div class="card" >
             <img src="..." class="card-img-top" alt="...">
             <div class="card-body">
-              <h5 class="card-title">Activities</h5>
-              <p class="card-text">Stuff happens here...</p>
+              <h5 class="card-title">Info</h5>
+              <div id='info' style="height: 40rem;" class='overflow-auto'>
+
+            </div>
             </div>
         </div>
       </div>
@@ -49,13 +51,18 @@
     </div>
 
   </div>
+
+  <div id="info-template" hidden>
+    <p class="card-text"></p>
+  </div>
+
   <div id="container-template" hidden>
-    <div class="card p-3">
-      <h5 class="card-header display-4">&nbsp;</h5>
+    <div class="card">
+      <h5 class="card-header">&nbsp;</h5>
       <div class="card-body embed-responsive embed-responsive-1by1">
         <iframe class="embed-responsive-item" src:'http://localhost:3000/get_ready.html'></iframe>
       </div>
-      <div class="timer-display card-footer display-3">&nbsp;</div>
+      <div class="timer-display card-footer">&nbsp;</div>
     </div>
 
   </div>

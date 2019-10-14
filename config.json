@@ -50,6 +50,24 @@
           "SYS_RESOURCE"
         ]
       }
-    }
+    },
+    {
+      "image": "criu_hotspot:latest",
+      "title": "Petclinic with Hotspot (CRIU enabled)",
+      "name": "petclinic-withcriu-hs",
+        "SecurityOpt": [
+          "apparmor=unconfined",
+          "seccomp=unconfined"
+        ],
+        "CapAdd": [
+          "AUDIT_CONTROL",
+          "DAC_READ_SEARCH",
+          "NET_ADMIN",
+          "SYS_ADMIN",
+          "SYS_PTRACE",
+          "SYS_RESOURCE"
+        ]
+      }
+    
   ]
 }
