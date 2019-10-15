@@ -80,12 +80,18 @@ function configImage(msg,image,instance) {
         return
     }
     if (ports.length>1) {
-        msg.Fatal("image "+instance.image+" has more than one tcp port")
-        return
+        if (instance.port!=null) {
+          ports=[instance.port]
+        }
+        else {
+          msg.Fatal("image "+instance.image+" has more than one tcp port")
+          return
+        }
+
     }
 
     instance.internalPort=ports[0]
-    msg.Info(instance.image+" has port "+instance.internalPort)
+    msg.Info(instance.image+" will use port "+instance.internalPort)
 
 
   });
@@ -122,14 +128,12 @@ function checkConfigInstances(msg,docker) {
 
 
 function monitorContainer(i,ip,iport,eport,msg) {
-  //console.log("watch ",i,ip,port)
+
   request('http://'+ip+':'+iport, function (error, response, body) {
     if(error==null) {
-        msg.State("box-started",i,eport)
+        msg.State("box-started",{ref:i,port:eport})
     }
     else {
-      //  console.log(error)
-    //  console.log(error)
       setTimeout(monitorContainer,100,i,ip,iport,eport,msg)
     }
   });

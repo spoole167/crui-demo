@@ -59,7 +59,7 @@ module.exports = function(cfg) {
         },
         // system is not usable
         Fatal: function(e,m) {
-            if(cfg.debug) console.log("comms:fatal:")
+            if(cfg.debug) console.log("comms:fatal:"+e);
               sendClientMsg(cfg.ws,"fatal",e)
         },
         // error during execution
@@ -73,9 +73,9 @@ module.exports = function(cfg) {
             sendClientMsg(cfg.ws,"info",m,t)
         },
         // state change - object ref, state-data, message
-        State: function(s,t,d) {
-              if(cfg.debug) console.log("comms:state:")
-              sendClientMsg(cfg.ws,s,d,t)
+        State: function(s,d) {
+              if(cfg.debug) console.log("comms:state:"+s)
+              sendClientMsg(cfg.ws,s,d)
         }
     }
 

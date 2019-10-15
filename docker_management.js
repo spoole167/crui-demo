@@ -48,32 +48,13 @@ function createContainers(msg,instances,active_list,ref) {
     hconf={}
   }
 
-  console.log("port -->"+instance.internalPort)
-  msg.Info(instance.image+" has port "+instance.internalPort)
+  msg.Info(instance.image+" uses internal port "+instance.internalPort)
   hconf.PublishAllPorts=true
-
-  /*
-  state.ports.push(expose)
-
-  var exposedPort=""+expose+"/tcp"
-
-  //   PortBindings: {"80/tcp": [{ "HostPort": "80" }],"22/tcp": [{ "HostPort": "22" }] }
-  var exPorts={}
-  exPorts[exposedPort]={}
-
-  var portKey=instances[c].internalPort+"/tcp"
-  // internalPort
-  //
-    hconf.PortBindings={}
-    hconf.PortBindings[portKey]=null
-
-  //}
-  */
 
   var definition={Image: image,
                         //  ExposedPorts: exPorts,
                           HostConfig: hconf,
-                          Labels: { "dev.noregressions.dockermon" : ""+ref}
+                          Labels: { "dev.noregressions.dockermon" : ""}
                   }
 
 
@@ -83,11 +64,10 @@ function createContainers(msg,instances,active_list,ref) {
   docker.createContainer(definition, function (err, container) {
 
     if(err!=null) {
-        console.log(err)
         msg.Error("error "+err)
     } else {
       active_list.push(container)
-      msg.State("box-created",instance.id,container.id)
+      msg.State("box-created",{ref:instance.id,cid:container.id})
         ref++
        createContainers(msg,instances,active_list,ref)
     }
@@ -99,29 +79,14 @@ function waitForContainer(i,msg,cb) {
 
 config.active[i].inspect().then(function(f){
 
-    console.log("wait for "+i)
     var ip=f.NetworkSettings.IPAddress
     if(ip==null || ip=="") {
       setTimeout(waitForContainer,10,i,msg,cb)
     } else {
       var key=config.instances[i].internalPort+"/tcp"
-      console.log(key)
-      console.log(f.NetworkSettings.Ports)
       var eport=f.NetworkSettings.Ports[key][0].HostPort
       config.active[i].eport=eport
-
-      // port =f.NetworkSettings.Ports  { }
-      /*
-      "Ports": {
-                "8080/tcp": [
-                    {
-                        "HostIp": "0.0.0.0",
-                        "HostPort": "32769"
-                    }
-                ]
-            },
-      */
-      setTimeout(cb,50,i,ip,config.instances[i].internalPort,eport,msg)
+      setTimeout(cb,100,i,ip,config.instances[i].internalPort,eport,msg)
     }
   });
 }
@@ -137,11 +102,10 @@ module.exports =  function(msg,cfg) {
           var q=new String(e.read())
           var oq=JSON.parse(q)
           if(oq.Type=="container") {
-            var box_id=oq.Actor.Attributes["dev.noregressions.dockermon"]
             switch(oq.status) {
-              case "die": msg.State("box-died",box_id); break;
-              case "create" : msg.State("box-create",box_id); break;
-              default : msg.Info("state = "+oq.status+" target="+box_id); break;
+              case "die": msg.State("box-died",{cid:oq.Actor.ID}); break;
+              case "create" : msg.State("box-create",{cid:oq.Actor.ID}); break;
+              default : msg.Info("state = "+oq.status+" target="+oq.Actor.ID); break;
             }
           }
     })
@@ -155,6 +119,7 @@ module.exports =  function(msg,cfg) {
         },
 
       clearContainers: function() {
+        config.active=[]
         docker.listContainers({all: true, filters:{"label":["dev.noregressions.dockermon"]}},function (err, containers) {
           if(err) {
             msg.Error("list containers err")
@@ -179,9 +144,9 @@ module.exports =  function(msg,cfg) {
           var l=config.active.length
 
           for( var i=0;i<l;i++) {
-            console.log(config.active[i].id)
+            console.log("starting "+config.active[i].id)
             config.active[i].start();
-            msg.State("box-starting",i)
+            msg.State("box-starting",{ref:i})
 
           }
           msg.Info("launch completed")

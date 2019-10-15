@@ -1,12 +1,16 @@
 {
   "title": "Checkpoint & Restore for Containers 2" ,
   "instances": [
+
+    {  "image": "openliberty/open-liberty:19.0.0.6-webProfile7-ubi-min-amd64" ,
+       "title":"open liberty",
+       "port" : "9080"
+      },
     {
       "image": "bharathappali/petclinic-springboot:without-criu",
       "title": "Petclinic with OpenJ9 (no CRIU)",
       "name": "petclinic-withoutcriu",
-      "expose1": 8080,
-      "hostconfig": {
+    "hostconfig": {
         "PortBindings2": {
           "8080/tcp": [
             {
@@ -28,7 +32,7 @@
       "image": "bharathappali/petclinic-springboot:with-criu",
       "title": "Petclinic with OpenJ9 (CRIU enabled)",
       "name": "petclinic-withcriu",
-      "expose1": 9080,
+    
       "hostconfig": {
         "PortBindings2": {
           "8080/tcp": [
@@ -68,6 +72,6 @@
           "SYS_RESOURCE"
         ]
       }
-    
+
   ]
 }

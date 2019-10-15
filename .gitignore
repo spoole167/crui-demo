@@ -88,3 +88,6 @@ typings/
 .dynamodb/
 
 .vscode
+
+# Apple
+.DS_Store

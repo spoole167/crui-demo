@@ -33,6 +33,19 @@ var config=[]
 var meta={}
 var title
 
+var id_box_map={}
+
+function isLiveBox(cid) {
+  return toBox(cid)!= -1
+}
+
+function toBox(cid) {
+    return id_box_map[cid] || -1
+}
+
+function setBox(box,cid) {
+  id_box_map[cid]=box
+}
 
 var eventHandlers = {
 
@@ -62,7 +75,7 @@ function handleMessage(evt,msg) {
   var handler=eventHandlers[type]
   if(handler!=null) {
     console.log(type)
-    handler(msg);
+    handler(msg.data);
   } else {
      console.log("comms msg type "+type+" not recognised");
   }
@@ -114,14 +127,14 @@ function serverInfo(msg) {
 }
 
 function serverIsDead(msg) {
-  console.log(msg.data.msg)
-  alert(msg.data.msg)
+  console.log(msg)
+  alert(msg)
 }
 
 function serverIsOpen(msg) {
 
-  config=msg.data.instances
-  meta=msg.data.display
+  config=msg.instances
+  meta=msg.display
   if (meta==null) {
     meta=[]
   }
@@ -139,7 +152,9 @@ function serverIsOpen(msg) {
       default: meta.columns=6; break
     }
   }
-  title=msg.data.title
+  title=msg.title
+
+  id_box_map={}
 
   cleanUI()
 
@@ -189,17 +204,13 @@ function serverIsReady(msg) {
 }
 
 function serverIsSet(msg) {
-  client_state.ports=msg.ports
-  $( "#go_button" ).attr("disabled", false);
-
+    $( "#go_button" ).attr("disabled", false);
 }
 
 function serverIsGo(msg) {
-
   $( "#ready_button" ).attr("disabled", false);
-
-
 }
+
 function initTimer(element,startTime) {
 
   return setInterval(function() {
@@ -218,28 +229,38 @@ function enableDemo() {
 
 function containerCreate(msg) {
 
-var c_id=msg.target
-console.log("container created via event "+c_id,msg.data)
+var cid=msg.cid
+console.log("container created via event "+cid)
 }
 
 function containerCreated(msg) {
-  var box=msg.target
-  $("#timer-"+box).text("-.-"); // clear the onscreen timer
+  var box=msg.ref
+  var cid=msg.cid
+  setBox(box,cid)
+  $("#timer-"+box).text("-.-");
 }
 
 
 function containerDied(msg) {
-  var  box=msg.target
-  console.log("box "+box+" died")
-  clearInterval(config[box].timer)
-  $("#timer-"+box).text("terminated")
+
+  console.log("box died "+JSON.stringify(msg))
+
+  var  cid=msg.cid
+
+  if (isLiveBox(cid) ) {
+      var box=toBox(cid)
+      console.log("box "+box+" died")
+      clearInterval(config[box].timer)
+      $("#timer-"+box).text("terminated")
+  }
 
 }
 
 function containerStarted(msg) {
  // stop the timer and show the page
- var box=msg.target
- var port=msg.data
+ var box=msg.ref
+ var port=msg.port
+
 
  console.log("container started "+box)
  var fig=config[box]
@@ -250,10 +271,11 @@ function containerStarted(msg) {
 
 }
 
+
 function containerStarting(msg) {
 
-  var box=msg.target
-  var fig=config[box]
+  console.log("box starting ",msg)
+  var box=msg.ref
   var started=Date.now()
 
   config[box].timerElement=$("#timer-"+box)
