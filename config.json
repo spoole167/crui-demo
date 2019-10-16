@@ -1,5 +1,5 @@
 {
-  "title": "Checkpoint & Restore for Containers 2" ,
+  "title": "Checkpoint & Restore for Containers " ,
   "instances": [
 
     {  "image": "openliberty/open-liberty:19.0.0.6-webProfile7-ubi-min-amd64" ,
@@ -8,7 +8,7 @@
       },
     {
       "image": "bharathappali/petclinic-springboot:without-criu",
-      "title": "Petclinic with OpenJ9 (no CRIU)",
+      "title": "Petclinic with OpenJ9",
       "name": "petclinic-withoutcriu",
     "hostconfig": {
         "PortBindings2": {
@@ -23,14 +23,14 @@
 
       {
         "image": "noncriu_hotspot:latest",
-        "title": "Petclinic with Hotspot (no CRIU)",
+        "title": "Petclinic with Hotspot",
         "name": "petclinic-withcriu_hs",
         "hostconfig": {
         }
       },
     {
       "image": "bharathappali/petclinic-springboot:with-criu",
-      "title": "Petclinic with OpenJ9 (CRIU enabled)",
+      "title": "Petclinic with OpenJ9 +CRIU",
       "name": "petclinic-withcriu",
     
       "hostconfig": {
@@ -54,24 +54,7 @@
           "SYS_RESOURCE"
         ]
       }
-    },
-    {
-      "image": "criu_hotspot:latest",
-      "title": "Petclinic with Hotspot (CRIU enabled)",
-      "name": "petclinic-withcriu-hs",
-        "SecurityOpt": [
-          "apparmor=unconfined",
-          "seccomp=unconfined"
-        ],
-        "CapAdd": [
-          "AUDIT_CONTROL",
-          "DAC_READ_SEARCH",
-          "NET_ADMIN",
-          "SYS_ADMIN",
-          "SYS_PTRACE",
-          "SYS_RESOURCE"
-        ]
-      }
+    }
 
   ]
 }
